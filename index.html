@@ -2,8 +2,10 @@
 <html lang="en">
 
 <head>
+    
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <script src="http://d3js.org/topojson.v1.min.js"></script>
+    
     <title>Stopa mortaliteta po vrstama smrti</title>
 
     <style>
@@ -14,6 +16,16 @@
         svg .country:hover {
             fill: grey;
         }
+
+        .axis {
+		    font: 10px sans-serif;
+	    }
+	    .axis path,
+	    .axis line {
+		    fill: none;
+		    stroke: #000;
+		    shape-rendering: crispEdges;
+	    }
     </style>
 </head>
 
@@ -24,68 +36,14 @@
     </div>
 
     <div id="country-info-container">
-        <svg id=""></svg>
-        <svg></svg>
+        <svg id="country-total-deaths-graph"></svg>
+        <svg id="country-top-death-causes-piechart"></svg>
     </div>
 
 
-    <script>
-
-        var width = 960;
-        var height = 700;
-
-        var deathData = [];
-        fetch("/csvjson.json").then((response) => response.json()).then((json) => deathData = json);
 
 
-        var projection = d3.geo.mercator()
-            .scale(155)
-            .translate([width / 2, height / 1.4]);
-
-        var path = d3.geo.path()
-            .projection(projection);
-
-        var svg = d3.select("#select-map")
-            .attr("width", width)
-            .attr("height", height)
-            .style("background", "lightblue")
-            .call(d3.behavior.zoom().scaleExtent([1, 10])
-                .on("zoom", onZoom))
-            .call(d3.behavior.drag()
-                .on("drag", onDrag))
-            .append("g");
-
-        d3.json("worldTopo.json", function (error, world) {
-            var data = topojson.feature(world, world.objects.countries1);
-            var states = svg.selectAll("path.county")
-                .data(data.features)
-                .enter()
-                .append("path")
-                .attr("class", "country")
-                .attr("id", function (d) { return d.id; })
-                .attr("d", path)
-                .style("stroke", "black")
-                .style("stroke-width", 1)
-                .style("stroke-opacity", 1)
-                .on("mouseover", function (d) {
-                    var country = deathData.find(element => element.Code == d.id);
-                    console.log(country);
-                    d3.select("#country-info-container").text(d.properties.name);
-                })
-        });
-
-        function onZoom() {
-            svg.attr("transform", "scale (" + d3.event.scale + ") translate(" + d3.event.translate + ")");
-
-        }
-        function onDrag() {
-        }
-
-
-
-    </script>
-
-
+    <script src="script.js"></script>
 </body>
 
 </html>
