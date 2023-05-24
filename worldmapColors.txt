@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <script src="https://d3js.org/d3.v3.min.js"></script>
+        <script src="http://d3js.org/topojson.v1.min.js"></script>
+        <title>Treci zadatak</title>
+    </head>
+    <body>
+        <script>
+            var width = 960;
+            var height = 700;
+
+            var skala = d3.scale.linear()
+                .domain([50000, 800000])
+                .range([0, 6]);
+
+            var colors = ["#26ff00", "#30d413", "#35b51f", "#369925", "#368729", "#35702c", "#2f5c28"];
+
+            var projection = d3.geo.mercator()
+                .center([0, 10])
+                .scale(6000)
+                .translate([17600, 4500])
+                .rotate([-180, 0]);
+
+            var path = d3.geo.path()
+                .projection(projection);
+
+            var svg = d3.select("body").append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .style("background", "black")
+                .call(d3.behavior.zoom().scaleExtent([0.3, 5])
+                    .on("zoom", onZoom))
+                    .append("g");
+
+            d3.select("body")
+                .append("div")
+                .attr("id", "name");
+
+            d3.select("body")
+                .append("div")
+                .attr("id", "info");
+
+            d3.json("cro.json", function(error, cro) {
+                var data = topojson.feature(cro, cro.objects.layer1);
+                var states = svg.selectAll("path.county")
+                    .data(data.features)
+                    .enter()
+                    .append("path")
+                    .attr("class", "county")
+                    .attr("id", function(d) { return d.id; })
+                    .attr("d", path)
+                    .style("fill", function (d)	{   
+                        var value = Math.round(skala(d.properties.population));	
+                        return colors[value]; })
+                    .style("stroke", "gray")
+                    .style("stroke-width", 1)
+                    .style("stroke-opacity", 1)
+                    .on("mouseover", function(d) { 
+                        console.log(d.properties.population);
+                    })
+                    .on("click", function(d) { 
+                        console.log(d.properties.population);
+                        d3.select("#info").html(`Zupanija: ${d.properties.name} <br/> Broj stanovnika: ${d.properties.population} <br/> Povrsina: ${d.properties.area} km2 <br/> Zupan: ${d.properties.mayor}`); 
+                    });	;			
+            });
+
+            function onZoom() {
+                svg.attr( "transform", "translate (" + d3.event.translate + ") scale (" + d3.event.scale + ")" );
+            }
+            
+        </script>
+    </body>
+</html>
