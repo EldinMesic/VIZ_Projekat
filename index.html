@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <script src="https://d3js.org/d3.v3.min.js"></script>
+        <script src="http://d3js.org/topojson.v1.min.js"></script>
+        <title>Stopa mortaliteta po vrstama smrti</title>
+    </head>
+    <body>
+        <script>
+            var width = 960;
+            var height = 700;
+
+            var deathData = [];
+            fetch("/csvjson.json").then((response) => response.json()).then((json) => deathData = json);
+
+
+            var projection = d3.geo.mercator()
+                .scale(155)
+                .translate([width/2, height/1.4]);
+
+            var path = d3.geo.path()
+                .projection(projection);
+
+            var svg = d3.select("body").append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .style("background", "lightblue")
+                .call(d3.behavior.zoom().scaleExtent([1, 10])
+                    .on("zoom", onZoom))
+                .call(d3.behavior.drag()
+                    .on("drag", onDrag))
+                .append("g");
+                
+                    
+
+            d3.select("body")
+                .append("div")
+                .attr("id", "name");
+
+            d3.json("worldTopo.json", function(error, world) {
+                var data = topojson.feature(world, world.objects.countries1);
+                var states = svg.selectAll("path.county")
+                    .data(data.features)
+                    .enter()
+                    .append("path")
+                    .attr("class", "county")
+                    .attr("id", function(d) { return d.id; })
+                    .attr("d", path) .style("fill", "black")
+                    .style("stroke", "gray")
+                    .style("stroke-width", 1)
+                    .style("stroke-opacity", 1)
+                    .on("mouseover", function(d) {
+                        deathData.forEach(element => {
+                            if(element.Code == d.id){
+                                console.log(`${element["Country/Territory"]} - Deaths by Malaria in year ${element.Year}: ${element.Malaria}`);
+                            }                                
+                        }); 
+                        d3.select("#name").text(d.properties.name); 
+                    });			
+            });
+
+            function onZoom() {
+                svg.attr( "transform", "scale (" + d3.event.scale + ")" );
+                
+            }
+            function onDrag(){
+                d3.select("svg g").attr("transform", "translate(" + (event.x) + ", " + (event.y) + ")")
+            }
+            
+            
+            
+        </script>
+    </body>
+</html>
