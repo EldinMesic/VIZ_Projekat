@@ -45,6 +45,7 @@ function fetchData(){
             }
             
         });
+        deathData.forEach(country => country.deaths.sort((a,b) => a.year - b.year));
     });
 }
 
@@ -121,8 +122,8 @@ function totalDeaths(selectedCountry){
 
     //date parsing
     var parseDate = d3.time.format("%Y").parse;
-    var minDate = new Date("01-Jan-1998");
-    var maxDate = new Date("01-Jan-2018");
+    var minDate = new Date("01-Jan-1990");
+    var maxDate = new Date("01-Jan-2019");
 
 
 
@@ -135,17 +136,20 @@ function totalDeaths(selectedCountry){
     var xAxis = d3.svg.axis()
         .scale(x)
         .orient("bottom")
-        .ticks(21);
-        console.log(selectedCountry.deaths.length);
+        .ticks(30);
 
 
     //define y-axis
     var y = d3.scale.linear()
-        .domain([0, d3.max(selectedCountry.deaths, function(d) { 
-            return d3.max(d.deathCounts, function(de) {
-                return de.count;
+        .domain([
+            d3.min(selectedCountry.deaths, function(d) {
+                return d.deathCounts.reduce((a,b) => a+b.count, 0);
+            })*0.95
+            , 
+            d3.max(selectedCountry.deaths, function(d) { 
+                return d.deathCounts.reduce((a,b) => a+b.count, 0);
             })
-        })])
+        ])
         .range([height, 0]);
     
     var yAxis = d3.svg.axis()
@@ -153,9 +157,10 @@ function totalDeaths(selectedCountry){
         .orient("left")
         .ticks(10);
 
-
+    //clear past svgs    
     d3.select("#country-total-deaths-graph").text("");
-    //create svg
+    
+    //create svgs
     var svg = d3.select("#country-total-deaths-graph")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.bottom + margin.top)
@@ -176,7 +181,7 @@ function totalDeaths(selectedCountry){
         .attr("font-weight", "bold")
         .style("font-size", "20px")
         .style("text-anchor", "middle")
-        .text(`${selectedCountry.name} - Broj umrlih od svih uzroka smrti po godinama`);
+        .text(`${selectedCountry.name} - Broj umrlih od neprirodnih uzroka smrti`);
         
     svg.append("g")
         .attr("class", "y axis")
@@ -186,7 +191,7 @@ function totalDeaths(selectedCountry){
         .attr("x", -(height / 2))
         .attr("y", -((margin.left / 2) + 20))
         .style("text-anchor", "middle")
-        .text("Broj oboljelih")
+        .text("Broj umrlih")
         .style("font-size", "13px")
 
     svg.append("text")
@@ -194,9 +199,21 @@ function totalDeaths(selectedCountry){
         .attr("y", (height + (margin.bottom / 2)))
         .attr("dy", "1em")
         .style("text-anchor", "middle")
-        .text("Datum");
+        .text("Godina");
     
     
+    //chart values
+    var valueline = d3.svg.line()
+        .x(function(d) { return x(parseDate(d.year.toString())); })
+        .y(function(d) { return y(d.deathCounts.reduce((a,b) => a+b.count, 0)); });
+        
+    var linechart = svg.append("path")
+        .attr("class", "line")
+        .attr("d", valueline(selectedCountry.deaths))
+        .style("stroke","#gradient")
+        .attr("fill","none")
+        .style("stroke-width", "10px")
+        .style("background-color", "linear-gradient(#e66465, #9198e5)");   
 
 
 }

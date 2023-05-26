@@ -73,14 +73,15 @@
             .attr("transform", "translate(0," + height + ")")
             .call(xAxis)
             .selectAll("text")
-            .style("text-anchor", "middle");
+            .style("text-anchor", "end")
+            .attr("transform", "rotate(45) translate(40,0)");
 
         svg.append("text")
             .attr("x", (width / 2))
             .attr("y", -(margin.top / 2))
             .attr("font-weight", "bold")
             .style("font-size", "20px")
-            .style("text-anchor", "middle")
+            .style("text-anchor", "end")
             .text("Broj oboljelih od COVID-19 u Hrvatskoj tijekom razdoblja 22.3.-31.3.");
             
         svg.append("g")
@@ -108,7 +109,7 @@
          var linechart = svg.append("path")
             .attr("class", "line")
             .attr("d", valueline(data))
-            .style("stroke","blue")
+            .style("stroke","url(#gradient)")
             .attr("fill","none")   
     </script>
 
