@@ -51,16 +51,16 @@ function fetchData(){
 
 
 //Draw Select Map
-function selectMap(){
+function drawSelectMap(){
     //attributes
-    var width = 960;
-    var height = 650;
+    var width = screen.width*0.7;
+    var height = width*(7/10);
 
 
     //define path and projection
     var projection = d3.geo.mercator()
-    .scale(153)
-    .translate([width / 2, height / 1.4]);
+    .scale(170)
+    .translate([width / 2, height / 1.45]);
 
     var path = d3.geo.path()
     .projection(projection);
@@ -74,12 +74,20 @@ function selectMap(){
         .style("background", "lightblue")
         .call(d3.behavior.zoom().scaleExtent([1, 10])
             .on("zoom", function(){
-                svg.attr("transform", "scale (" + d3.event.scale + ") translate(" + d3.event.translate + ")");
+                svg.attr("transform", "scale (" + d3.event.scale + ") translate("+ d3.event.translate +")");
+                if(d3.event.scale == 1){
+                    svg.attr("transform", "translate(0,0)");
+                    d3.event.translate = [0,0];
+                }
             }))
         .call(d3.behavior.drag()
+            .on("dragstart", function(){
+
+            })
             .on("drag", function(){
                 
             }))
+            
         .append("g");
 
     
@@ -98,32 +106,36 @@ function selectMap(){
             .style("stroke-opacity", 1)
             .on("mouseover", function (d) {
                 var country = deathData.find(element => element.code == d.id);
-                if(country)
-                    totalDeaths(country);
+                if(country){
+
+                }
             })
+            .on("click", function(d){
+                var country = deathData.find(element => element.code == d.id);
+                if(country){
+                    drawTotalDeathsLineChart(deathData.find(el => el.code == d.id), 1999, 2018);
+                }
+
+            });
     });
         
 
 }
-//Draw Total Deaths Graph
-function totalDeaths(selectedCountry){
+//Draw Total Deaths Line Chart
+function drawTotalDeathsLineChart(selectedCountry, minYears, maxYears){
+    filteredDeathData = selectedCountry.deaths.filter(country => country.year>=minYears && country.year<=maxYears);
+
     //variables
-    var margin = {top: 50, bottom: 70, left: 120, right: 20};
-    var width = 1200 - margin.left - margin.right;
-    var height = 700 - margin.top - margin.bottom;
-
-
-    //look
-    var colors = d3.scale.linear()
-        .domain([1, 20])
-        .range(["blue","red"]);
+    var margin = {top: 50, bottom: 70, left: 90, right: 20};
+    var width = screen.width*0.5 - margin.left - margin.right;
+    var height = width*0.6 - margin.top - margin.bottom;
 
 
 
     //date parsing
     var parseDate = d3.time.format("%Y").parse;
-    var minDate = new Date("01-Jan-1990");
-    var maxDate = new Date("01-Jan-2019");
+    var minDate = new Date(`01-Jan-${minYears}`);
+    var maxDate = new Date(`01-Jan-${maxYears}`);
 
 
 
@@ -136,19 +148,19 @@ function totalDeaths(selectedCountry){
     var xAxis = d3.svg.axis()
         .scale(x)
         .orient("bottom")
-        .ticks(30);
+        .ticks(filteredDeathData.length);
 
 
     //define y-axis
     var y = d3.scale.linear()
         .domain([
-            d3.min(selectedCountry.deaths, function(d) {
+            d3.min(filteredDeathData, function(d) {
                 return d.deathCounts.reduce((a,b) => a+b.count, 0);
             })*0.95
             , 
-            d3.max(selectedCountry.deaths, function(d) { 
+            d3.max(filteredDeathData, function(d) { 
                 return d.deathCounts.reduce((a,b) => a+b.count, 0);
-            })
+            })*1.05
         ])
         .range([height, 0]);
     
@@ -156,6 +168,9 @@ function totalDeaths(selectedCountry){
         .scale(y)
         .orient("left")
         .ticks(10);
+
+
+
 
     //clear past svgs    
     d3.select("#country-total-deaths-graph").text("");
@@ -167,22 +182,31 @@ function totalDeaths(selectedCountry){
         .style("background-color", "lightblue")
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top +")");
+    svg.append("text")
+        .attr("x", (width / 2))
+        .attr("y", -(margin.top / 2))
+        .attr("font-weight", "bold")
+        .style("font-size", "14px")
+        .style("text-anchor", "middle")
+        .text(`${selectedCountry.name} - Stopa mortaliteta od neprirodnih uzroka smrti`);
+        
 
+        //x axis
     svg.append("g")
         .attr("class", "x axis")
         .attr("transform", "translate(0," + height + ")")
         .call(xAxis)
         .selectAll("text")
-        .style("text-anchor", "middle");
-
+        .style("text-anchor", "end")
+        .attr("transform", "translate(20, 15) rotate(45)");
     svg.append("text")
         .attr("x", (width / 2))
-        .attr("y", -(margin.top / 2))
-        .attr("font-weight", "bold")
-        .style("font-size", "20px")
+        .attr("y", (height + (margin.bottom / 2)))
+        .attr("dy", "1em")
         .style("text-anchor", "middle")
-        .text(`${selectedCountry.name} - Broj umrlih od neprirodnih uzroka smrti`);
-        
+        .text("Godina");
+
+        //y axis
     svg.append("g")
         .attr("class", "y axis")
         .call(yAxis)
@@ -194,14 +218,8 @@ function totalDeaths(selectedCountry){
         .text("Broj umrlih")
         .style("font-size", "13px")
 
-    svg.append("text")
-        .attr("x", (width / 2))
-        .attr("y", (height + (margin.bottom / 2)))
-        .attr("dy", "1em")
-        .style("text-anchor", "middle")
-        .text("Godina");
-    
-    
+
+
     //chart values
     var valueline = d3.svg.line()
         .x(function(d) { return x(parseDate(d.year.toString())); })
@@ -209,12 +227,10 @@ function totalDeaths(selectedCountry){
         
     var linechart = svg.append("path")
         .attr("class", "line")
-        .attr("d", valueline(selectedCountry.deaths))
-        .style("stroke","#gradient")
+        .attr("d", valueline(filteredDeathData))
+        .style("stroke","blue")
         .attr("fill","none")
-        .style("stroke-width", "10px")
-        .style("background-color", "linear-gradient(#e66465, #9198e5)");   
-
+        .style("stroke-width", "1px");
 
 }
 
@@ -224,8 +240,7 @@ function totalDeaths(selectedCountry){
 var deathData = [];
 
 
-
-
 //Execute Code
 fetchData();
-selectMap();
+drawSelectMap();
+

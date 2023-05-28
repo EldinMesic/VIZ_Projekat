@@ -9,6 +9,10 @@
     <title>Stopa mortaliteta po vrstama smrti</title>
 
     <style>
+        body{
+            display: flex;
+            flex-direction: column;
+        }
         svg .country {
             fill: lightgrey;
         }
@@ -31,13 +35,6 @@
 
 <body>
 
-    <defs>
-        <linearGradient id="gradient" y1="0" y2="1">
-         <stop stop-color="#EEF85B" offset="0"/>
-         <stop stop-color="#09E5C3" offset="1"/>
-        </linearGradient>
-    </defs>
-
     <div id="select-map-container">
         <svg id="select-map"></svg>
     </div>
@@ -46,14 +43,6 @@
         <svg id="country-total-deaths-graph"></svg>
         <svg id="country-top-death-causes-piechart"></svg>
     </div>
-
-
-    <defs>
-        <linearGradient id="gradient" y1="0" y2="1">
-         <stop stop-color="#EEF85B" offset="0"/>
-         <stop stop-color="#09E5C3" offset="1"/>
-        </linearGradient>
-       </defs>
 
 
     <script src="script.js"></script>
