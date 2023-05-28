@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    
+    <script src="https://d3js.org/d3.v3.min.js"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+    
+    <title>Stopa mortaliteta po vrstama smrti</title>
+
+    <style>
+        body{
+            display: flex;
+            flex-direction: column;
+        }
+        svg .country {
+            fill: lightgrey;
+        }
+
+        svg .country:hover {
+            fill: grey;
+        }
+
+        .axis {
+		    font: 10px sans-serif;
+	    }
+	    .axis path,
+	    .axis line {
+		    fill: none;
+		    stroke: #000;
+		    shape-rendering: crispEdges;
+	    }
+    </style>
+</head>
+
+<body>
+
+    <div id="select-map-container">
+        <svg id="select-map"></svg>
+    </div>
+
+    <div id="country-info-container">
+        <svg id="country-total-deaths-graph"></svg>
+        <svg id="country-top-death-causes-piechart"></svg>
+    </div>
+
+
+    <script src="script.js"></script>
+</body>
+
+</html>
