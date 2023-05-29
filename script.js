@@ -46,6 +46,7 @@ function fetchData(){
             
         });
         deathData.forEach(country => country.deaths.sort((a,b) => a.year - b.year));
+        drawSelectMap();
     });
 }
 
@@ -54,43 +55,40 @@ function fetchData(){
 function drawSelectMap(){
     //attributes
     var width = screen.width*0.7;
-    var height = width*(7/10);
+    var height = parseInt(width*0.7);
 
 
     //define path and projection
     var projection = d3.geo.mercator()
-    .scale(170)
+    .scale(185)
     .translate([width / 2, height / 1.45]);
 
     var path = d3.geo.path()
     .projection(projection);
 
 
+    //colors
+    var totalDeathsScale = d3.scale.linear().domain([100000, 10000000]).range([1, 10]);
+    var myColor = d3.scale.linear().domain([1, 10])
+        .range(["white", "darkred"]);
+
 
     //create svg
     var svg = d3.select("#select-map")
         .attr("width", width)
         .attr("height", height)
-        .style("background", "lightblue")
         .call(d3.behavior.zoom().scaleExtent([1, 10])
             .on("zoom", function(){
                 svg.attr("transform", "scale (" + d3.event.scale + ") translate("+ d3.event.translate +")");
+                svg.selectAll(".country")
+                    .style("stroke-width", (1/d3.event.scale).toFixed(2).toString() + "px");
                 if(d3.event.scale == 1){
                     svg.attr("transform", "translate(0,0)");
                     d3.event.translate = [0,0];
                 }
             }))
-        .call(d3.behavior.drag()
-            .on("dragstart", function(){
-
-            })
-            .on("drag", function(){
-                
-            }))
-            
         .append("g");
 
-    
     //create countries
     d3.json("worldTopo.json", function (error, world) {
         var data = topojson.feature(world, world.objects.countries1);
@@ -101,18 +99,55 @@ function drawSelectMap(){
             .attr("class", "country")
             .attr("id", function (d) { return d.id; })
             .attr("d", path)
-            .style("stroke", "black")
-            .style("stroke-width", 1)
-            .style("stroke-opacity", 1)
-            .on("mouseover", function (d) {
+            .style("fill", (d) => {
                 var country = deathData.find(element => element.code == d.id);
                 if(country){
+                    var totalDeaths = 0;
+                    country.deaths.forEach(el => totalDeaths+=el.deathCounts.reduce((a,b) => a+b.count, 0));
+                    if(totalDeaths>20000000){
+                        return "#5b0000";
+                    }
+                    return myColor(totalDeathsScale(totalDeaths));
+                    
+                }
+            })
+            .style("stroke", "black")
+            .style("stroke-width", 1)
+            .style("fill-opacity", 0.8)
+            .style("stroke-opacity", 1)
+            .on("mouseover", (d) => {
+                var country = deathData.find(element => element.code == d.id);
 
+                if(country){
+                    svg.select(`#${d.id}`)
+                    .transition().duration(250)
+                        .style("fill-opacity", 1)
+                        .style("stroke-width", 4);
+
+                    d3.select(".tooltip")
+                    .style("visibility", "visible")
+                    .style("left", `${d3.event.pageX+1}px`)
+                    .style("top", `${d3.event.pageY+1}px`)
+                    .text(`Country: \n${country.name}`)
+                }
+            })
+            .on("mouseout", (d) => {
+                var country = deathData.find(element => element.code == d.id);
+
+                if(country){
+                    svg.select(`#${d.id}`)
+                        .transition().duration(250)
+                            .style("fill-opacity", 0.8)
+                            .style("stroke-width", 1);
+
+                    d3.select(".tooltip")
+                        .style("visibility", "hidden")
                 }
             })
             .on("click", function(d){
                 var country = deathData.find(element => element.code == d.id);
                 if(country){
+                    d3.select("#country-info-container").style("visibility", "visible");
                     drawTotalDeathsLineChart(deathData.find(el => el.code == d.id), 1999, 2018);
                 }
 
@@ -123,6 +158,8 @@ function drawSelectMap(){
 }
 //Draw Total Deaths Line Chart
 function drawTotalDeathsLineChart(selectedCountry, minYears, maxYears){
+
+    //preperations
     filteredDeathData = selectedCountry.deaths.filter(country => country.year>=minYears && country.year<=maxYears);
 
     //variables
@@ -149,6 +186,7 @@ function drawTotalDeathsLineChart(selectedCountry, minYears, maxYears){
         .scale(x)
         .orient("bottom")
         .ticks(filteredDeathData.length);
+
 
 
     //define y-axis
@@ -179,7 +217,6 @@ function drawTotalDeathsLineChart(selectedCountry, minYears, maxYears){
     var svg = d3.select("#country-total-deaths-graph")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.bottom + margin.top)
-        .style("background-color", "lightblue")
         .append("g")
         .attr("transform", "translate(" + margin.left + "," + margin.top +")");
     svg.append("text")
@@ -232,6 +269,42 @@ function drawTotalDeathsLineChart(selectedCountry, minYears, maxYears){
         .attr("fill","none")
         .style("stroke-width", "1px");
 
+
+    //mouseover transition and tooltip control
+    filteredDeathData.forEach((item, k) => {
+        var deathCount = item.deathCounts.reduce((a,b) => a+b.count, 0)
+
+        svg.append("circle")
+            .attr("id", "circle-"+k)
+            .attr("r", 5)
+            .attr("cx", () => x(parseDate(item.year.toString())))
+            .attr("cy", () => y(deathCount))
+            .style("fill", "darkblue")
+            .on("mouseenter", () => {
+                d3.select(".tooltip")
+                    .style("visibility", "visible")
+                    .style("left", `${d3.event.pageX+1}px`)
+                    .style("top", `${d3.event.pageY+1}px`)
+                    .text(`Year: ${item.year.toString()}\n${parseInt(deathCount).toLocaleString()}`)
+                    
+                d3.select("#circle-"+k)
+                    .transition()
+                    .attr("r", 13)
+                    .style("fill", "darkred")
+                    .style("cursor", "pointer");
+                })
+            .on("mouseout", () => {
+                d3.select(".tooltip")
+                    .style("visibility", "hidden")
+
+                d3.select("#circle-"+k)
+                .transition()
+                .attr("r", 5)
+                .style("fill", "darkblue")
+            });
+
+    })
+
 }
 
 
@@ -242,5 +315,4 @@ var deathData = [];
 
 //Execute Code
 fetchData();
-drawSelectMap();
 
