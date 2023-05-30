@@ -655,7 +655,7 @@ function updateBarChart(bar, causeName){
 
 
     var y = d3.scale.linear()
-        .domain([totalDeathsForCauses[0].count*0.95 , totalDeathsForCauses[totalDeathsForCauses.length-1].count*1.05])
+        .domain([totalDeathsForCauses[totalDeathsForCauses.length-1].count*0.95 , totalDeathsForCauses[0].count*1.05])
         .range([height, 0]);
 
     var svg = d3.select("#world-causes-barchart").select("g");
@@ -667,6 +667,8 @@ function updateBarChart(bar, causeName){
 }
 //barchart dropdowns
 function setupBarChartDropdowns(){
+    totalDeathsForCauses.reverse();
+
     totalDeathsForCauses.forEach(el => {
         d3.selectAll(".causeDropdown")
             .append("option")
@@ -675,7 +677,7 @@ function setupBarChartDropdowns(){
 
     for(i=0; i<5;i++){
         var selectedDropdown = document.querySelector(`#cause${i+1}Dropdown`);
-        selectedDropdown.value = totalDeathsForCauses[totalDeathsForCauses.length-i-1].name;
+        selectedDropdown.value = totalDeathsForCauses[i].name;
     }
 
     document.querySelector(`#cause1Dropdown`).addEventListener("change", () => {
