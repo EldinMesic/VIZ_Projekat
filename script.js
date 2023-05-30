@@ -497,13 +497,13 @@ function setupCausesToShowDropdown(){
 }
 
 
+
 //setup and draw bar chart
 function drawBarChart(){
     //preperations
     var deathCauses = [];
     deathData[0].deaths[0].deathCounts.forEach(el => deathCauses.push(el.name));
     
-    var totalDeathsForCauses = [];
     for(i=0; i<deathCauses.length;i++){
         totalDeathsForCauses.push({
             name: deathCauses[i],
@@ -515,28 +515,34 @@ function drawBarChart(){
     
 
     //variables
-    var margin = {top: 50, bottom: 70, left: 90, right: 20};
+    var margin = {top: 50, bottom: 70, left: 110, right: 20};
     var width = screen.width*0.5;
-    var height = width*0.5;
+    var height = width*0.75;
+    var barPadding = 50;
+    var barWidth = width*0.12;
 
 
+    //color
+    var myColor = d3.scale.linear()
+        .domain([1, 5])
+        .range(["pink", "#5b0000"]);
 
     //define x-axis
     var x = d3.scale.linear()
-        .domain([1, 4])
-        .rangeRound([0, width]);
+        .domain([1,40])
+        .range([0, width]);
 
 
     var xAxis = d3.svg.axis()
         .scale(x)
         .orient("bottom")
-        .ticks(4);
+        .ticks(0);
 
 
 
     //define y-axis
     var y = d3.scale.linear()
-        .domain([totalDeathsForCauses[0]*0.95 , totalDeathsForCauses[totalDeathsForCauses.length]*1.05])
+        .domain([totalDeathsForCauses[0].count*0.95 , totalDeathsForCauses[totalDeathsForCauses.length-1].count*1.05])
         .range([height, 0]);
     
     var yAxis = d3.svg.axis()
@@ -580,14 +586,119 @@ function drawBarChart(){
         .text("Broj umrlih")
         .style("font-size", "13px")
 
-
-
-    //chart values
     
+    //chart values
+    var barchart1 = svg.selectAll("rect.bar1")
+        .data([totalDeathsForCauses[19]])
+        .enter()
+        .append("rect")
+            .attr("class", "bar1")
+            .attr("x", (d,i) => x(i+1)+50)
+            .attr("y", (d,i) => y(d.count))
+            .attr("width", barWidth)
+            .attr("height", (d) => height - y(d.count) -1)
+            .attr("fill", myColor(5));
 
+    var barchart2 = svg.selectAll("rect.bar2")
+        .data([totalDeathsForCauses[18]])
+        .enter()
+        .append("rect")
+            .attr("class", "bar2")
+            .attr("x", (d,i) => x(i+1) + barPadding*2+barWidth)
+            .attr("y", (d,i) => y(d.count))
+            .attr("width", barWidth)
+            .attr("height", (d) => height - y(d.count) -1)
+            .attr("fill", myColor(4));
+
+    var barchart3 = svg.selectAll("rect.bar3")
+        .data([totalDeathsForCauses[17]])
+        .enter()
+        .append("rect")
+            .attr("class", "bar3")
+            .attr("x", (d,i) => x(i+1) + barPadding*3+barWidth*2)
+            .attr("y", (d,i) => y(d.count))
+            .attr("width", barWidth)
+            .attr("height", (d) => height - y(d.count) -1)
+            .attr("fill", myColor(3));
+
+    var barchart4 = svg.selectAll("rect.bar4")
+        .data([totalDeathsForCauses[16]])
+        .enter()
+        .append("rect")
+            .attr("class", "bar4")
+            .attr("x", (d,i) => x(i+1) + barPadding*4+barWidth*3)
+            .attr("y", (d,i) => y(d.count))
+            .attr("width", barWidth)
+            .attr("height", (d) => height - y(d.count) -1)
+            .attr("fill", myColor(2));
+
+    var barchart5 = svg.selectAll("rect.bar5")
+        .data([totalDeathsForCauses[15]])
+        .enter()
+        .append("rect")
+            .attr("class", "bar5")
+            .attr("x", (d,i) => x(i+1) + barPadding*5+barWidth*4)
+            .attr("y", (d,i) => y(d.count))
+            .attr("width", barWidth)
+            .attr("height", (d) => height - y(d.count) -1)
+            .attr("fill", myColor(1));
+
+    setupBarChartDropdowns();
 }
+function updateBarChart(bar, causeName){
+    //variables
+    var margin = {top: 50, bottom: 70, left: 110, right: 20};
+    var width = screen.width*0.5;
+    var height = width*0.75;
+    var barPadding = 50;
+    var barWidth = width*0.12;
 
 
+    var y = d3.scale.linear()
+        .domain([totalDeathsForCauses[0].count*0.95 , totalDeathsForCauses[totalDeathsForCauses.length-1].count*1.05])
+        .range([height, 0]);
+
+    var svg = d3.select("#world-causes-barchart").select("g");
+    svg.selectAll(`rect.bar${bar}`)
+    .data([totalDeathsForCauses.find(el => el.name == causeName)])
+        .transition().duration(1000).ease("back-out")
+            .attr("y", (d,i) => y(d.count))
+            .attr("height", (d) => height - y(d.count) -1);
+}
+//barchart dropdowns
+function setupBarChartDropdowns(){
+    totalDeathsForCauses.forEach(el => {
+        d3.selectAll(".causeDropdown")
+            .append("option")
+            .text(el.name)
+    });
+
+    for(i=0; i<5;i++){
+        var selectedDropdown = document.querySelector(`#cause${i+1}Dropdown`);
+        selectedDropdown.value = totalDeathsForCauses[totalDeathsForCauses.length-i-1].name;
+    }
+
+    document.querySelector(`#cause1Dropdown`).addEventListener("change", () => {
+        console.log(document.querySelector("#cause1Dropdown").value.toString())
+        updateBarChart(1, document.querySelector("#cause1Dropdown").value.toString())
+    });
+    document.querySelector(`#cause2Dropdown`).addEventListener("change", () => {
+        console.log(document.querySelector("#cause2Dropdown").value.toString())
+        updateBarChart(2, document.querySelector("#cause2Dropdown").value.toString())
+    });
+    document.querySelector(`#cause3Dropdown`).addEventListener("change", () => {
+        console.log(document.querySelector("#cause3Dropdown").value.toString())
+        updateBarChart(3, document.querySelector("#cause3Dropdown").value.toString())
+    });
+    document.querySelector(`#cause4Dropdown`).addEventListener("change", () => {
+        console.log(document.querySelector("#cause4Dropdown").value.toString())
+        updateBarChart(4, document.querySelector("#cause4Dropdown").value.toString())
+    });
+    document.querySelector(`#cause5Dropdown`).addEventListener("change", () => {
+        console.log(document.querySelector("#cause5Dropdown").value.toString())
+        updateBarChart(5, document.querySelector("#cause5Dropdown").value.toString())
+    });
+}
 
 //Global Variables
 var originalDeathData = [];
@@ -595,8 +706,7 @@ var deathData = [];
 var selectedCountry;
 var selectedYears = [1998, 2018];
 var numberOfCauses = 4;
-
-
+var totalDeathsForCauses = [];
 //Execute Code
 fetchData(); //also creates select map
 

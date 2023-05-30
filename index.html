@@ -88,6 +88,10 @@
             align-items: center;
             justify-content: space-evenly;
         }
+        .color-legend{
+            width: 5em;
+            height: 1.5em;
+        }
 
 
     </style>
@@ -98,8 +102,15 @@
 
 
     <div class="content">
-        <div id="world-causes-container">
+        <div id="world-causes-container" class="flex-row">
             <svg id="world-causes-barchart"></svg>
+            <g class="flex-column">
+                <g class="flex-row"><div class="color-legend" style="background: #5b0000;"></div><select class="from-select causeDropdown" id="cause1Dropdown"></select></g>
+                <g class="flex-row"><div class="color-legend" style="background: #843033;"></div><select class="from-select causeDropdown" id="cause2Dropdown"></select></g>
+                <g class="flex-row"><div class="color-legend" style="background: #ad6066;"></div><select class="from-select causeDropdown" id="cause3Dropdown"></select></g>
+                <g class="flex-row"><div class="color-legend" style="background: #d69098;"></div><select class="from-select causeDropdown" id="cause4Dropdown"></select></g>
+                <g class="flex-row"><div class="color-legend" style="background: #ffc0cb;"></div><select class="from-select causeDropdown" id="cause5Dropdown"></select></g>
+            </g>
         </div>
 
 
