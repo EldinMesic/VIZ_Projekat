@@ -38,15 +38,22 @@
         }
 
         #country-info-container{
+            display: flex;
+            align-items: center;
+            justify-content: space-evenly;
+            flex-direction: row;
             margin: 2em;
             background: gray;
             visibility: hidden;
             border: 5px;
             border-style: double;
+            white-space:pre-wrap;
         }
-        #country-total-deaths-graph{
+        #country-total-deaths-graph, .country-top-death-causes-piechart{
             background: lightgrey;
             border-style: dashed;
+            margin: 1em;
+            white-space:pre-wrap;
         }
 
         .axis {
@@ -68,32 +75,66 @@
             white-space:pre-wrap;
             text-align: center;
         }
+        .flex-row{
+            margin: 0.5em 1em;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-evenly;
+        }
+        .flex-column{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-evenly;
+        }
+
 
     </style>
 </head>
 
 <body>
-    <p class="tooltip">
-    </p>
+    <p class="tooltip"></p>
+
+
     <div class="content">
+
         <div id="select-map-container">
             <svg id="select-map"></svg>
         </div>
     
+
+
         <div id="country-info-container">
-            <svg id="country-total-deaths-graph"></svg>
-            <svg id="country-top-death-causes-piechart"></svg>
+            <div class = "flex-column">
+                <g class="flex-row">
+                    <g class="flex-row">
+                        <span>From Year:</span>
+                        <select class="form-select " id="fromYearDropdown">
+                        </select>
+                    </g>
+                    <g class="flex-row">
+                        <span>To Year:</span>
+                        <select class="form-select " id="toYearDropdown">
+                        </select>
+                    </g>
+                </g> 
+                <svg id="country-total-deaths-graph"></svg>
+            </div>
+            
+            <div class="flex-column" style="margin-top:1.5em">
+                <g class="flex-row">
+                    <span>Number of Deadliest Causes to Show: </span>
+                    <select class="form-select " id="causesToShowDropdown">
+                    </select>
+                </g>
+                <svg id="country-top-death-causes-piechart"></svg>
+            </div>
+            
         </div>
-
-
-
 
         
     </div>
-    
-
-    
-
     <script src="script.js"></script>
 </body>
 

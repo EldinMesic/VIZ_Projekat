@@ -144,11 +144,16 @@ function drawSelectMap(){
                         .style("visibility", "hidden")
                 }
             })
+            //create other graphs
             .on("click", function(d){
-                var country = deathData.find(element => element.code == d.id);
-                if(country){
+                selectedCountry = deathData.find(element => element.code == d.id);
+                if(selectedCountry){
                     d3.select("#country-info-container").style("visibility", "visible");
-                    drawTotalDeathsLineChart(deathData.find(el => el.code == d.id), 1999, 2018);
+
+                    drawTotalDeathsLineChart(selectedYears[0], selectedYears[1]);
+                    drawDeadliestCausesPieChart(5);
+
+                    window.location.href = "#country-info-container";
                 }
 
             });
@@ -156,16 +161,19 @@ function drawSelectMap(){
         
 
 }
+
+
 //Draw Total Deaths Line Chart
-function drawTotalDeathsLineChart(selectedCountry, minYears, maxYears){
+function drawTotalDeathsLineChart(minYears, maxYears){
 
     //preperations
     filteredDeathData = selectedCountry.deaths.filter(country => country.year>=minYears && country.year<=maxYears);
+    UpdateYearDropdown(minYears, maxYears);
 
     //variables
     var margin = {top: 50, bottom: 70, left: 90, right: 20};
-    var width = screen.width*0.5 - margin.left - margin.right;
-    var height = width*0.6 - margin.top - margin.bottom;
+    var width = screen.width*0.3;
+    var height = width*0.8;
 
 
 
@@ -264,10 +272,10 @@ function drawTotalDeathsLineChart(selectedCountry, minYears, maxYears){
         
     var linechart = svg.append("path")
         .attr("class", "line")
-        .attr("d", valueline(filteredDeathData))
         .style("stroke","blue")
         .attr("fill","none")
-        .style("stroke-width", "1px");
+        .style("stroke-width", "1px")
+        .attr("d", valueline(filteredDeathData));
 
 
     //mouseover transition and tooltip control
@@ -305,14 +313,199 @@ function drawTotalDeathsLineChart(selectedCountry, minYears, maxYears){
 
     })
 
+    
 }
+//year dropdown functionality
+function UpdateYearDropdown(){
+    var fromDropdown = d3.select("#fromYearDropdown");
+    var toDropdown = d3.select("#toYearDropdown");
+
+
+    fromDropdown.text("");
+    fromDropdown.selectAll("option")
+        .data(selectedCountry.deaths.filter(el => el.year<selectedYears[1]))
+        .enter()
+        .append("option")
+        .text((d) => d.year);
+    document.querySelector("#fromYearDropdown").value = selectedYears[0];
+
+    toDropdown.text("");
+    
+    toDropdown.selectAll("option")
+            .data(selectedCountry.deaths.filter(el => el.year>selectedYears[0]))
+            .enter()
+            .append("option")
+            .text((d) => d.year);
+    document.querySelector("#toYearDropdown").value = selectedYears[1];
+
+
+
+}
+function setupYearDropDown(){
+    document.querySelector("#fromYearDropdown").addEventListener("change", () => {
+        selectedYears[0] = document.querySelector("#fromYearDropdown").value;
+        drawTotalDeathsLineChart(selectedYears[0], selectedYears[1]);
+        UpdateYearDropdown();
+    });
+    document.querySelector("#toYearDropdown").addEventListener("change", () => {
+        selectedYears[1] = document.querySelector("#toYearDropdown").value;
+        drawTotalDeathsLineChart(selectedYears[0], selectedYears[1]);
+        UpdateYearDropdown();
+    });
+}
+
+
+
+//draw Deadliest Causes Pie Chart
+function drawDeadliestCausesPieChart(){
+    UpdateCausesToShowDropdown();
+
+    //variables
+    var margin = {top: 50, bottom: 70, left: 90, right: 20};
+    var width = screen.width*0.35;
+    var height = width
+
+    var outerRadius = width*0.4;
+    var innerRadius = width*0.1;
+
+
+    //dataset formating
+    var deathCausesArray = [];
+    for(i = 0; i<selectedCountry.deaths[0].deathCounts.length; i++){
+        var name = selectedCountry.deaths[0].deathCounts[i].name;
+        var causeDeathCount = selectedCountry.deaths.reduce((a,b) => a+b.deathCounts[i].count, 0);
+        deathCausesArray.push({name: name, count: causeDeathCount});
+    }
+    deathCausesArray.sort((a,b) => a.count- b.count);
+
+    var totalDeathsCount = deathCausesArray.reduce((a,b) => a+b.count,0);
+    deathCausesArray = deathCausesArray.slice(Math.max(deathCausesArray.length - numberOfCauses, 0));
+    var deadliestDeathsCount = deathCausesArray.reduce((a,b) => a+b.count, 0);
+
+    deathCausesArray.forEach(el => el.count = (el.count*100/totalDeathsCount).toFixed(2));
+    deathCausesArray.unshift({
+        name: "Others",
+        count: (100 - deadliestDeathsCount*100/totalDeathsCount).toFixed(2)
+    });
+
+
+
+    //color
+    var myColor = d3.scale.linear()
+        .domain([1, deathCausesArray.length])
+        .range(["lightgrey", "#5b0000"]);
+
+
+    //define pie arcs
+    var arc = d3.svg.arc()
+        .outerRadius(outerRadius);
+
+    var pie = d3.layout.pie()
+        .value(function(d) { return d.count; });
+
+
+    //clear past svgs    
+    d3.select("#country-top-death-causes-piechart").text("");
+
+    //create svgs
+    var svg = d3.select("#country-top-death-causes-piechart")
+        .attr("width", width)
+        .attr("height", height);
+
+
+    //create pie arcs
+    var pieArcs = svg.selectAll("g.pie")
+        .data(pie(deathCausesArray))
+        .enter()
+        .append("g")
+        .attr("class", "pie")
+        .attr("transform", "translate(" + (width / 2) + ", " + (height / 2) +")");
+
+    pieArcs.append("path")
+        .attr("fill", "grey")
+        .attr("d", arc)
+        .style("opacity", 0.8)
+        .transition().duration(500)
+            .attr("fill", function(d, i) { return myColor(i+1); });
+
+    
+    var labelArcs = svg.selectAll("g2.pie")
+        .data(pie(deathCausesArray))
+        .enter()
+        .append("g")
+        .attr("class", "pie")
+        .attr("transform", "translate(" + (width / 2) + ", " + (height / 2) +")");
+
+
+    labelArcs.append("text")
+        .attr("transform", function(d,i) { 
+            d.outerRadius = innerRadius - 64 + i%2*144;
+            d.innerRadius = innerRadius - 64 + i%2*144;
+            return "translate(" + arc.centroid(d) + ")"; })
+        .attr("text-anchor", "middle")
+        .text(function(d, i) { return `${deathCausesArray[i].name}`; })
+        .style("opacity", 0)
+        .transition().duration(600)
+            .style("opacity", 1);
+    labelArcs.append("text")
+        .attr("transform", function(d,i) { 
+            d.outerRadius = innerRadius - 64 + i%2*144;
+            d.innerRadius = innerRadius - 64 + i%2*144;
+            return "translate(" + arc.centroid(d) + ")"; })
+        .attr("dy", "1em")
+        .attr("text-anchor", "middle")
+        .text(function(d, i) { return `${deathCausesArray[i].count}%`; })
+        .style("opacity", 0)
+        .transition().duration(600)
+            .style("opacity", 1);
+    
+        
+    svg.append("circle")
+        .attr("r", outerRadius+2)
+        .attr("cx", width/2)
+        .attr("cy", height/2)
+        .style("fill", "none")
+        .style("stroke", "black")
+        .style("stroke-width", "3px")
+        .style("stroke-dasharray", 5);
+
+
+
+}
+function UpdateCausesToShowDropdown(){
+    var causesToShowDropdown = d3.select("#causesToShowDropdown");
+
+    causesToShowDropdown.text("");
+    causesToShowDropdown.selectAll("option")
+        .data(selectedCountry.deaths[0].deathCounts)
+        .enter()
+        .append("option")
+        .text((d, i) => i);
+    document.querySelector("#causesToShowDropdown").value = numberOfCauses;
+}
+//causes to show functionality
+function setupCausesToShowDropdown(){
+    document.querySelector("#causesToShowDropdown").addEventListener("change", () => {
+        numberOfCauses = document.querySelector("#causesToShowDropdown").value;
+        drawDeadliestCausesPieChart();
+        UpdateCausesToShowDropdown();
+    });
+}
+
+
+
 
 
 
 //Global Variables
 var deathData = [];
+var selectedCountry;
+var selectedYears = [1998, 2018];
+var numberOfCauses = 4;
 
 
 //Execute Code
 fetchData();
+setupYearDropDown();
+setupCausesToShowDropdown();
 
