@@ -3,12 +3,13 @@ function fetchData(){
     var response = [];
     response.push(fetch("/csvjson.json").then((response) => response.json()));
     Promise.all(response).then(results => {
+        originalDeathData = results[0];
         results[0].forEach(result => {
 
             var deathInfo = {
                 year: result.Year,
                 deathCounts: [
-                    {name: "Menignitis", count: result["Meningitis"]},
+                    {name: "Meningitis", count: result["Meningitis"]},
                     {name: "Alzheimer's Disease and Other Dementias", count: result["Alzheimer's Disease and Other Dementias"]},
                     {name: "Parkinson's Disease", count: result["Parkinson's Disease"]},
                     {name: "Nutritional Deficiencies", count: result["Nutritional Deficiencies"]},
@@ -47,6 +48,7 @@ function fetchData(){
         });
         deathData.forEach(country => country.deaths.sort((a,b) => a.year - b.year));
         drawSelectMap();
+        drawBarChart();
     });
 }
 
@@ -168,7 +170,7 @@ function drawTotalDeathsLineChart(minYears, maxYears){
 
     //preperations
     filteredDeathData = selectedCountry.deaths.filter(country => country.year>=minYears && country.year<=maxYears);
-    UpdateYearDropdown(minYears, maxYears);
+    updateYearDropdown(minYears, maxYears);
 
     //variables
     var margin = {top: 50, bottom: 70, left: 90, right: 20};
@@ -316,7 +318,7 @@ function drawTotalDeathsLineChart(minYears, maxYears){
     
 }
 //year dropdown functionality
-function UpdateYearDropdown(){
+function updateYearDropdown(){
     var fromDropdown = d3.select("#fromYearDropdown");
     var toDropdown = d3.select("#toYearDropdown");
 
@@ -345,12 +347,12 @@ function setupYearDropDown(){
     document.querySelector("#fromYearDropdown").addEventListener("change", () => {
         selectedYears[0] = document.querySelector("#fromYearDropdown").value;
         drawTotalDeathsLineChart(selectedYears[0], selectedYears[1]);
-        UpdateYearDropdown();
+        updateYearDropdown();
     });
     document.querySelector("#toYearDropdown").addEventListener("change", () => {
         selectedYears[1] = document.querySelector("#toYearDropdown").value;
         drawTotalDeathsLineChart(selectedYears[0], selectedYears[1]);
-        UpdateYearDropdown();
+        updateYearDropdown();
     });
 }
 
@@ -387,7 +389,8 @@ function drawDeadliestCausesPieChart(){
         name: "Others",
         count: (100 - deadliestDeathsCount*100/totalDeathsCount).toFixed(2)
     });
-
+    
+    deathCausesArray.sort((a,b) => a.count - b.count);
 
 
     //color
@@ -422,11 +425,12 @@ function drawDeadliestCausesPieChart(){
         .attr("transform", "translate(" + (width / 2) + ", " + (height / 2) +")");
 
     pieArcs.append("path")
-        .attr("fill", "grey")
+        .attr("fill", (d,i) => myColor(i+1))
         .attr("d", arc)
+        .attr("id", (d, i) => `arc${i}`)
         .style("opacity", 0.8)
-        .transition().duration(500)
-            .attr("fill", function(d, i) { return myColor(i+1); });
+        .on("mouseover", (d, i) => svg.select(`#arc${i}`).transition().duration(200).style("opacity", 1))
+        .on("mouseout", (d, i) => svg.select(`#arc${i}`).transition().duration(200).style("opacity", 0.8));
 
     
     var labelArcs = svg.selectAll("g2.pie")
@@ -445,7 +449,7 @@ function drawDeadliestCausesPieChart(){
         .attr("text-anchor", "middle")
         .text(function(d, i) { return `${deathCausesArray[i].name}`; })
         .style("opacity", 0)
-        .transition().duration(600)
+        .transition().duration(250)
             .style("opacity", 1);
     labelArcs.append("text")
         .attr("transform", function(d,i) { 
@@ -456,7 +460,7 @@ function drawDeadliestCausesPieChart(){
         .attr("text-anchor", "middle")
         .text(function(d, i) { return `${deathCausesArray[i].count}%`; })
         .style("opacity", 0)
-        .transition().duration(600)
+        .transition().duration(250)
             .style("opacity", 1);
     
         
@@ -472,6 +476,7 @@ function drawDeadliestCausesPieChart(){
 
 
 }
+//causes to show functionality
 function UpdateCausesToShowDropdown(){
     var causesToShowDropdown = d3.select("#causesToShowDropdown");
 
@@ -483,7 +488,6 @@ function UpdateCausesToShowDropdown(){
         .text((d, i) => i);
     document.querySelector("#causesToShowDropdown").value = numberOfCauses;
 }
-//causes to show functionality
 function setupCausesToShowDropdown(){
     document.querySelector("#causesToShowDropdown").addEventListener("change", () => {
         numberOfCauses = document.querySelector("#causesToShowDropdown").value;
@@ -493,11 +497,100 @@ function setupCausesToShowDropdown(){
 }
 
 
+//setup and draw bar chart
+function drawBarChart(){
+    //preperations
+    var deathCauses = [];
+    deathData[0].deaths[0].deathCounts.forEach(el => deathCauses.push(el.name));
+    
+    var totalDeathsForCauses = [];
+    for(i=0; i<deathCauses.length;i++){
+        totalDeathsForCauses.push({
+            name: deathCauses[i],
+            count: originalDeathData.reduce((a,b) => a+b[deathCauses[i]], 0)
+        })
+    }
+    totalDeathsForCauses.sort((a,b) => a.count - b.count);
+    
+    
 
+    //variables
+    var margin = {top: 50, bottom: 70, left: 90, right: 20};
+    var width = screen.width*0.5;
+    var height = width*0.5;
+
+
+
+    //define x-axis
+    var x = d3.scale.linear()
+        .domain([1, 4])
+        .rangeRound([0, width]);
+
+
+    var xAxis = d3.svg.axis()
+        .scale(x)
+        .orient("bottom")
+        .ticks(4);
+
+
+
+    //define y-axis
+    var y = d3.scale.linear()
+        .domain([totalDeathsForCauses[0]*0.95 , totalDeathsForCauses[totalDeathsForCauses.length]*1.05])
+        .range([height, 0]);
+    
+    var yAxis = d3.svg.axis()
+        .scale(y)
+        .orient("left")
+        .ticks(10);
+
+
+    //create svgs
+    var svg = d3.select("#world-causes-barchart")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.bottom + margin.top)
+        .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top +")");
+    svg.append("text")
+        .attr("x", (width / 2))
+        .attr("y", -(margin.top / 2))
+        .attr("font-weight", "bold")
+        .style("font-size", "16px")
+        .style("text-anchor", "middle")
+        .text(`Stopa mortaliteta od neprirodnih uzroka smrti u svijetu`);
+        
+
+        //x axis
+    svg.append("g")
+        .attr("class", "x axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(xAxis)
+        .selectAll("text")
+        .text("");
+
+        //y axis
+    svg.append("g")
+        .attr("class", "y axis")
+        .call(yAxis)
+        .append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("x", -(height / 2))
+        .attr("y", -((margin.left / 2) + 20))
+        .style("text-anchor", "middle")
+        .text("Broj umrlih")
+        .style("font-size", "13px")
+
+
+
+    //chart values
+    
+
+}
 
 
 
 //Global Variables
+var originalDeathData = [];
 var deathData = [];
 var selectedCountry;
 var selectedYears = [1998, 2018];
@@ -505,7 +598,8 @@ var numberOfCauses = 4;
 
 
 //Execute Code
-fetchData();
+fetchData(); //also creates select map
+
 setupYearDropDown();
 setupCausesToShowDropdown();
 
