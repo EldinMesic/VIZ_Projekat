@@ -6,7 +6,7 @@
     <script src="https://d3js.org/d3.v3.min.js"></script>
     <script src="http://d3js.org/topojson.v1.min.js"></script>
     
-    <title>Stopa mortaliteta po vrstama smrti</title>
+    <title>Stopa mortaliteta po uzrocima smrti</title>
 
     <style>
         body{
@@ -92,14 +92,24 @@
             width: 5em;
             height: 1.5em;
         }
+        .title{
+            padding: 2em;
+            font-weight: bolder;
+            text-align: center;
+            background:#843033;
+        }
 
 
     </style>
 </head>
 
 <body>
-    <p class="tooltip"></p>
 
+    <div class="title">
+        <h1>Stop mortaliteta po uzrocima smrti</h1>
+    </div>
+
+    <p class="tooltip"></p>
 
     <div class="content">
         <div id="world-causes-container" class="flex-row">
