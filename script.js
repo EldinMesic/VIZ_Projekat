@@ -522,11 +522,6 @@ function drawBarChart(){
     var barWidth = width*0.12;
 
 
-    //color
-    var myColor = d3.scale.linear()
-        .domain([1, 5])
-        .range(["pink", "#5b0000"]);
-
     //define x-axis
     var x = d3.scale.linear()
         .domain([1,40])
@@ -597,7 +592,7 @@ function drawBarChart(){
             .attr("y", (d,i) => y(d.count))
             .attr("width", barWidth)
             .attr("height", (d) => height - y(d.count) -1)
-            .attr("fill", myColor(5));
+            .attr("fill", "blue");
 
     var barchart2 = svg.selectAll("rect.bar2")
         .data([totalDeathsForCauses[18]])
@@ -608,7 +603,7 @@ function drawBarChart(){
             .attr("y", (d,i) => y(d.count))
             .attr("width", barWidth)
             .attr("height", (d) => height - y(d.count) -1)
-            .attr("fill", myColor(4));
+            .attr("fill", "green");
 
     var barchart3 = svg.selectAll("rect.bar3")
         .data([totalDeathsForCauses[17]])
@@ -619,7 +614,7 @@ function drawBarChart(){
             .attr("y", (d,i) => y(d.count))
             .attr("width", barWidth)
             .attr("height", (d) => height - y(d.count) -1)
-            .attr("fill", myColor(3));
+            .attr("fill", "red");
 
     var barchart4 = svg.selectAll("rect.bar4")
         .data([totalDeathsForCauses[16]])
@@ -630,7 +625,7 @@ function drawBarChart(){
             .attr("y", (d,i) => y(d.count))
             .attr("width", barWidth)
             .attr("height", (d) => height - y(d.count) -1)
-            .attr("fill", myColor(2));
+            .attr("fill", "yellow");
 
     var barchart5 = svg.selectAll("rect.bar5")
         .data([totalDeathsForCauses[15]])
@@ -641,7 +636,7 @@ function drawBarChart(){
             .attr("y", (d,i) => y(d.count))
             .attr("width", barWidth)
             .attr("height", (d) => height - y(d.count) -1)
-            .attr("fill", myColor(1));
+            .attr("fill", "grey");
 
     setupBarChartDropdowns();
 }
